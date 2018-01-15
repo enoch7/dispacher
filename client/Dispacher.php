@@ -41,23 +41,24 @@ class Dispacher
 
 	}
 
-	public static function getSequence(string $key,int $num = 1)
+	public  function getSequence(string $key,int $num = 1)
 	{
 		try {
 			$redis = $this->getRedisConnection();
 			if ($redis->exists($key)) {
+				$number = 0;
+
 				$luaScript = <<<LUA
-current = redis.call("HGET", KEYS[1], "current")
-max = redis.call("HGET", KEYS[1], "max")
+local current = redis.call("HGET", KEYS[1], "current")
+local max = redis.call("HGET", KEYS[1], "max")
 if max > current then
-	current = redis.call("HINCRBY", KEYS[1], 1)
+	current = redis.call("HINCRBY", KEYS[1], "current",1)
     return current
 else
     return 0
 end
 LUA;
 				$number = $redis->eval($luaScript,[$key],1);
-				
 			} else {
 				$number = 0;
 				if ($redis->set("lock:set:".$key, 1, ['NX', 'EX'=>10])) {
