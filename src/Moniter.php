@@ -1,52 +1,11 @@
 <?php
+require_once __DIR__ . "/Common.php";
 /**
 * 
 */
-class Moniter
+class Moniter extends Common
 {
-	private $redis;
-	private $dbconn;
-
 	private $lastNumber = 0;
-
-	public function __construct()
-	{
-		$this->init();
-	}
-
-	public function init()
-	{
-
-	}
-
-	public function getRedisConnection()
-	{
-		if ($this->redis) {
-			return $this->redis;
-		}
-		$redis = new \Redis();
-		$redis->connect($this->config['redis']['hostname'], $this->config['redis']['port']);
-
-		if ($redis->ping()) {
-			$this->redis = $redis;
-			return $this->redis;
-		} else {
-			throw new \RedisException("redis connnect fail");
-		}
-
-	}
-
-	public function getDbConnection()
-	{
-		if ($this->dbconn) {
-			return $this->dbconn;
-		}
-
-		$conn = new mysqli('127.0.0.1','root','root','test');
-		$this->dbconn = $conn;
-		return $this->dbconn;
-
-	}
 
 	public function start()
 	{
@@ -62,11 +21,14 @@ class Moniter
 				$step = $persistentData['step'];
 
 				$currentStat = $redis->hGetAll($key);
-				if ($currentStat['current'] - $this->lastNumber > $step) {
+
+				if ($this->lastNumber !=0 && $currentStat['current'] - $this->lastNumber > $step) {
 					$step = $currentStat['current'] - $this->lastNumber;
 					$sql = "update sequence set step = " . $step . " where name = '{$key}' ";
 					$dbconn->query($sql);
 				}
+
+				$this->lastNumber = $currentStat['current'];
 
 				if ($currentStat['max'] - $currentStat['current'] < $step * (60/$sleepTime) * 10) {
 					if ($redis->set("lock:set:".$key, 1, ['NX', 'EX'=>10])) {
@@ -91,7 +53,5 @@ class Moniter
 		}	
 		
 	}
-
-
 	
 }

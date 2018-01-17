@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . "/../client/Dispacher.php";
+require_once __DIR__ . "/../src/Dispacher.php";
 $config = require_once(__DIR__ . '/../config/config.php');
 
 $dispacher = new Dispacher($config);

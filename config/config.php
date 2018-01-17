@@ -9,8 +9,9 @@ return [
 	],
 	'db' => [
 		'hostname' => '127.0.0.1',
-		'username' => 'root',
+		'user' => 'root',
 		'password' => 'root',
+		'database' => 'test',
 		'tablePrefix' => '',
 		'charset' => 'utf8',
 	],

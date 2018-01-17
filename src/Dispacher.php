@@ -1,45 +1,10 @@
 <?php
-
-class Dispacher 
+require_once __DIR__ . "/Common.php";
+/**
+* 
+*/
+class Dispacher extends Common
 {
-	private $redis;
-	private $dbconn;
-
-	private $config;
-
-	public function __construct(array $config)
-	{
-		$this->config = $config;
-	}
-
-	public function getRedisConnection()
-	{
-		if ($this->redis) {
-			return $this->redis;
-		}
-		$redis = new \Redis();
-		$redis->connect($this->config['redis']['hostname'], $this->config['redis']['port']);
-
-		if ($redis->ping()) {
-			$this->redis = $redis;
-			return $this->redis;
-		} else {
-			throw new \RedisException("redis connnect fail");
-		}
-
-	}
-
-	public function getDbConnection()
-	{
-		if ($this->dbconn) {
-			return $this->dbconn;
-		}
-
-		$conn = new mysqli('127.0.0.1','root','root','test');
-		$this->dbconn = $conn;
-		return $this->dbconn;
-
-	}
 
 	public  function getSequence(string $key,int $num = 1)
 	{
@@ -94,6 +59,6 @@ LUA;
 
 		}
 		return $number;
-	}
+	}	
+	
 }
-
