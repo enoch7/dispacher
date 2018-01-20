@@ -29,9 +29,10 @@ class Dispacher extends Common
 			$result = $dbconn->query($sql);
 			$row = $result->fetch_array(MYSQLI_ASSOC);
 			if ($row['max']) {
-				$sql = "update sequence set max = last_insert_id(max + step) where name = '{$key}'";
+				$newMax = $row['max'] + $row['step'];
+				$sql = "update sequence set max = {$newMax} where name = '{$key}'";
 				if ($dbconn->query($sql)) {
-					$redis->hMSet($key,['current'=>$row['max'],'max'=>($row['max'] + $row['step'])]);
+					$redis->hMSet($key,['current'=>$row['max'],'max'=>$newMax]);
 				}		
 			}
 			$redis->del("lock:set:".$key);

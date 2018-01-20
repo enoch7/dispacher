@@ -9,10 +9,18 @@ class Moniter extends Common
 
 	public function start()
 	{
+		global $argv;
+		if (isset($argv[1])) {
+			$key = $argv[1];	
+		} else {
+			echo "need a key name";
+			exit(0);
+		}
+		
 		$sleepTime = 10;
 		while (true) {
+			$startTime = microtime(true);
 			try {
-				$key = '20180110';
 				$redis = $this->getRedisConnection();
 				$dbconn = $this->getDbConnection();
 				$sql = "select max,step from sequence where name = '{$key}' limit 1";
@@ -28,13 +36,14 @@ class Moniter extends Common
 					$dbconn->query($sql);
 				}
 
-				$this->lastNumber = $currentStat['current'];
+				$this->lastNumber = $currentStat['current']; 
 
-				if ($currentStat['max'] - $currentStat['current'] < $step * (60/$sleepTime) * 10) {
+				if ($currentStat['max'] - $currentStat['current'] < intval($step * (60/$sleepTime) * 10)) {
 					if ($redis->set("lock:set:".$key, 1, ['NX', 'EX'=>10])) {
-						$sql = "update sequence set max = last_insert_id(max + step) where name = '{$key}'";
+						$newMax = $persistentData['max'] + intval($step * (60/$sleepTime) * 10);
+						$sql = "update sequence set max = {$newMax} where name = '{$key}'";
 						if ($dbconn->query($sql)) {
-							$redis->hSet($key, 'max', ($currentStat['max'] + $step * (60/$sleepTime) * 10));
+							$redis->hSet($key, 'max', $newMax);
 						}		
 						$redis->del("lock:set:".$key);
 					}	
@@ -42,16 +51,15 @@ class Moniter extends Common
 
 			} catch (\Exception $e) {
 				if ($e instanceof \RedisException) {
-					$this->redis = null;
+					$this->setRedis();
 				} else if ($e instanceof \PDOException) {
-					$this->dbconn = null;
+					$this->setDbConn();
 				} else {
 					//log excption;
 				}
 			}
-			sleep($sleepTime);
-		}	
-		
+
+			usleep(($sleepTime - (microtime(true) - $startTime)) * 1000000);
+		}		
 	}
-	
 }

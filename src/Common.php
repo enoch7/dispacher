@@ -9,6 +9,16 @@ class Common
 		$this->config = $config;
 	}
 
+	public function setRedis($redis = null)
+	{
+		$this->redis = $redis;
+	}
+
+	public function setDbConn($dbconn = null)
+	{
+		$this->dbconn = $dbconn;
+	}
+
 	public function getRedisConnection()
 	{
 		if ($this->redis) {
