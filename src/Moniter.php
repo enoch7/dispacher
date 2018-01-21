@@ -17,7 +17,7 @@ class Moniter extends Common
 			exit(0);
 		}
 		
-		$sleepTime = 10;
+		$sleepTime = 5;
 		while (true) {
 			$startTime = microtime(true);
 			try {
@@ -30,12 +30,12 @@ class Moniter extends Common
 
 				$currentStat = $redis->hGetAll($key);
 
-				if ($this->lastNumber !=0 && $currentStat['current'] - $this->lastNumber > $step) {
+				if ($this->lastNumber !=0 && (($currentStat['current'] - $this->lastNumber) > $step)) {
 					$step = $currentStat['current'] - $this->lastNumber;
 					$sql = "update sequence set step = " . $step . " where name = '{$key}' ";
 					$dbconn->query($sql);
+					echo date("Y-m-d H:i:s"). "." .(microtime(true)-time()) . " moniter更新了step的值为$step"."\n";
 				}
-
 				$this->lastNumber = $currentStat['current']; 
 
 				if ($currentStat['max'] - $currentStat['current'] < intval($step * (60/$sleepTime) * 10)) {
@@ -43,6 +43,7 @@ class Moniter extends Common
 						$newMax = $persistentData['max'] + intval($step * (60/$sleepTime) * 10);
 						$sql = "update sequence set max = {$newMax} where name = '{$key}'";
 						if ($dbconn->query($sql)) {
+							echo date("Y-m-d H:i:s") . "." .(microtime(true)-time()) ." moniter更新了max的值为".$newMax . "\n";
 							$redis->hSet($key, 'max', $newMax);
 						}		
 						$redis->del("lock:set:".$key);
